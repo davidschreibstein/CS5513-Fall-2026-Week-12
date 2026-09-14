@@ -1,46 +1,50 @@
-// Home page — shown at the site root (/)
-import Link from 'next/link'; // Client-side navigation between pages
-import Date from '../components/date'; // Formats ISO date strings for display
-import Head from 'next/head'; // Sets document <head> tags (title, meta, etc.)
-import Layout, { siteTitle } from '../components/layout'; // Shared page layout + site title
-import utilStyles from '../styles/utils.module.css'; // Shared utility CSS classes
+// Home page — rendered at the site root URL (/)
+import Link from 'next/link'; // Client-side links (no full page reload)
+import Date from '../components/date'; // Turns ISO dates into readable text
+import Head from 'next/head'; // Edits the document <head> (tab title, meta, etc.)
+import Layout, { siteTitle } from '../components/layout'; // Shared layout + exported site title string
+import utilStyles from '../styles/utils.module.css'; // Reusable CSS module class names
 
-// Helper that reads markdown files from /posts and returns sorted post metadata
+// Reads /posts/*.md, parses front matter, returns posts sorted by date
 import { getSortedPostsData } from '../lib/posts';
 
-// Runs at build time (Static Generation).
-// Fetches post data once and passes it to the page as props.
+// Static Generation: runs once at build time on the server (not in the browser).
+// Whatever you return in props is passed into the page component below.
 export async function getStaticProps() {
-  const allPostsData = getSortedPostsData();
+  const allPostsData = getSortedPostsData(); // Array of { id, title, date, ... }
   return {
     props: {
-      allPostsData, // Available to Home as a prop
+      allPostsData, // Becomes the allPostsData argument on Home(...)
     },
   };
 }
 
-// Homepage component — receives allPostsData from getStaticProps
+// React page component for "/".
+// allPostsData comes from getStaticProps above.
 export default function Home({ allPostsData }) {
   return (
-    // home prop tells Layout to show the larger profile header
+    // home={true} → Layout shows the large homepage header (bigger photo + name)
     <Layout home>
       <Head>
-        {/* Browser tab title */}
+        {/* Text shown in the browser tab */}
         <title>{siteTitle}</title>
       </Head>
 
-      {/* Blog post list section */}
+      {/* Blog listing: heading + unordered list of posts */}
+      {/* Template literal combines two CSS module classes into one className string */}
       <section className={`${utilStyles.headingMd} ${utilStyles.padding1px}`}>
         <h2 className={utilStyles.headingLg}>Blog</h2>
         <ul className={utilStyles.list}>
-          {/* Loop through each post and render a list item */}
+          {/* .map() builds one <li> per post; destructure only the fields we need */}
           {allPostsData.map(({ id, date, title }) => (
+            // key helps React track each list item; use a stable unique value (id)
             <li className={utilStyles.listItem} key={id}>
-              {/* Link to the dynamic post page at /posts/[id] */}
+              {/* Dynamic route: /posts/ssg-ssr, /posts/lakers, etc. */}
               <Link href={`/posts/${id}`}>{title}</Link>
               <br />
+              {/* <small> + lightText = secondary, quieter date styling */}
               <small className={utilStyles.lightText}>
-                {/* Formatted publish date (e.g. January 1, 2020) */}
+                {/* dateString is the markdown front-matter date, e.g. '2020-01-01' */}
                 <Date dateString={date} />
               </small>
             </li>
